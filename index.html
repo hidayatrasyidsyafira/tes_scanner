@@ -3,10 +3,10 @@
      <head>
        <meta charset="UTF-8">
        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-       <title>Scanner Absensi Wajah</title>
+       <title>Scanner Absensi Barcode</title>
        <script src="https://cdn.tailwindcss.com"></script>
        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-       <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+       <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
        <style>
          *, *:before, *:after {
            box-sizing: border-box;
@@ -48,20 +48,21 @@
            text-overflow: ellipsis;
            white-space: nowrap;
          }
-         .webcam-container {
+         .scanner-container {
            position: relative;
            width: 100%;
            height: 200px;
+           border-radius: 8px;
+           overflow: hidden;
          }
-         #webcam {
+         #scanner {
            width: 100%;
            height: 100%;
            object-fit: cover;
-           border-radius: 8px;
          }
-         #face-guide {
+         #scan-guide {
            position: absolute;
-           top: 10%;
+           top: 20%;
            left: 20%;
            width: 60%;
            height: 60%;
@@ -70,19 +71,16 @@
            pointer-events: none;
            transition: border-color 0.3s;
          }
-         #face-guide.detected {
+         #scan-guide.detected {
            border-color: #10b981;
          }
-         #face-guide.recognized {
-           border-color: #3b82f6;
-         }
-         #webcam-error {
+         #scanner-error {
            display: none;
            color: red;
            font-size: 14px;
            text-align: center;
          }
-         #face-message {
+         #scan-message {
            text-align: center;
            font-size: 14px;
            color: #4b5563;
@@ -107,18 +105,18 @@
            align-items: center;
            gap: 10px;
          }
-         #popup-video {
+         #popup-scanner {
            width: 100%;
            height: 100%;
            object-fit: cover;
            border-radius: 8px;
          }
-         #popup .webcam-container {
+         #popup .scanner-container {
            height: 70%;
          }
-         #popup-face-guide {
+         #popup-scan-guide {
            position: absolute;
-           top: 10%;
+           top: 20%;
            left: 20%;
            width: 60%;
            height: 60%;
@@ -127,11 +125,8 @@
            pointer-events: none;
            transition: border-color 0.3s;
          }
-         #popup-face-guide.detected {
+         #popup-scan-guide.detected {
            border-color: #10b981;
-         }
-         #popup-face-guide.recognized {
-           border-color: #3b82f6;
          }
          #popup-error {
            display: none;
@@ -155,7 +150,7 @@
              grid-template-columns: 1fr;
            }
            .col-span-2 {
-             display: none; /* Sembunyikan sidebar di ponsel */
+             display: none;
            }
            .col-span-10 {
              width: 100%;
@@ -226,7 +221,7 @@
                  <i class="fas fa-user text-4xl text-blue-600"></i>
                  <div>
                    <h2 class="text-lg font-semibold line-clamp-1">Selamat Datang</h2>
-                   <p class="text-base text-gray-600 line-clamp-1">Selamat datang di scanner absensi wajah.</p>
+                   <p class="text-base text-gray-600 line-clamp-1">Selamat datang di scanner absensi barcode.</p>
                  </div>
                </div>
              </div>
@@ -270,13 +265,17 @@
                <div class="card-5-8-row">
                  <div class="card-8-container">
                    <div class="bg-white p-5 rounded-lg shadow-md card-5-fixed flex flex-col justify-center items-center overflow-hidden">
-                     <h2 class="text-lg font-semibold line-clamp-1 mb-2">Scanner Wajah</h2>
-                     <div class="webcam-container">
-                       <video id="webcam" autoplay playsinline></video>
-                       <div id="face-guide"></div>
+                     <h2 class="text-lg font-semibold line-clamp-1 mb-2">Scanner Barcode</h2>
+                     <div class="scanner-container">
+                       <video id="scanner" autoplay playsinline></video>
+                       <div id="scan-guide"></div>
                      </div>
-                     <p id="face-message">Arahkan wajah ke kamera</p>
-                     <p id="webcam-error">Gagal memuat kamera</p>
+                     <p id="scan-message">Arahkan barcode ke kamera</p>
+                     <p id="scanner-error">Gagal memuat kamera</p>
+                     <select id="camera-select" class="border rounded-lg p-2 mt-2">
+                       <option value="user">Kamera Depan</option>
+                       <option value="environment">Kamera Belakang</option>
+                     </select>
                      <button id="open-popup" class="bg-blue-600 text-white px-4 py-2 mt-2 rounded-lg hover:bg-blue-700">Buka Scanner</button>
                    </div>
                  </div>
@@ -295,7 +294,7 @@
                <div class="bg-white p-2 rounded-lg shadow-md card-6-fixed flex flex-row items-center gap-4 overflow-hidden">
                  <div class="flex-1 text-center">
                    <h2 class="text-lg font-semibold line-clamp-1">Jam Sekarang</h2>
-                   <p class="text-3xl font-bold text-gray-800" id="digital-clock">04:39:00</p>
+                   <p class="text-3xl font-bold text-gray-800" id="digital-clock">05:01:00</p>
                  </div>
                  <div class="flex-1 flex flex-col justify-center">
                    <h2 class="text-lg font-semibold text-center mb-2">MASUK | PULANG</h2>
@@ -361,13 +360,17 @@
          <!-- Popup untuk Scanner -->
          <div id="popup-overlay"></div>
          <div id="popup">
-           <h2 class="text-xl font-semibold">Scanner Wajah</h2>
-           <div class="webcam-container">
-             <video id="popup-video" autoplay playsinline></video>
-             <div id="popup-face-guide"></div>
+           <h2 class="text-xl font-semibold">Scanner Barcode</h2>
+           <div class="scanner-container">
+             <video id="popup-scanner" autoplay playsinline></video>
+             <div id="popup-scan-guide"></div>
            </div>
-           <p id="face-message">Arahkan wajah ke kamera</p>
+           <p id="scan-message">Arahkan barcode ke kamera</p>
            <p id="popup-error">Gagal memuat kamera</p>
+           <select id="popup-camera-select" class="border rounded-lg p-2">
+             <option value="user">Kamera Depan</option>
+             <option value="environment">Kamera Belakang</option>
+           </select>
            <button id="close-popup" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Tutup</button>
          </div>
        </div>
@@ -376,31 +379,54 @@
          let stream = null;
          let popupStream = null;
          let siswaData = [];
-         let studentDatabase = [];
          let filteredData = [];
          let currentPage = 1;
          let rowsPerPage = 3;
-         let faceMatcher = null;
-         let captureInterval = null;
          const BASE_URL = 'https://script.google.com/macros/s/AKfycbzVF64Tj2YKrxABGX9lCdjbSG4ar4xueGXiT45hspbZjmZz2dSadE13RFNshE8-kES6nA/exec';
 
-         async function startWebcam(elementId) {
+         async function startScanner(elementId, cameraMode = 'environment') {
            const videoElement = document.getElementById(elementId);
-           const errorElement = document.getElementById(elementId === 'webcam' ? 'webcam-error' : 'popup-error');
-           const messageElement = document.getElementById('face-message');
+           const errorElement = document.getElementById(elementId === 'scanner' ? 'scanner-error' : 'popup-error');
+           const messageElement = document.getElementById('scan-message');
            try {
              const newStream = await navigator.mediaDevices.getUserMedia({
                video: { 
-                 width: elementId === 'popup-video' ? 1280 : 640, 
-                 height: elementId === 'popup-video' ? 720 : 480,
-                 facingMode: 'user' // Kamera depan untuk scanner
+                 width: elementId === 'popup-scanner' ? 1280 : 640, 
+                 height: elementId === 'popup-scanner' ? 720 : 480,
+                 facingMode: cameraMode
                }
              });
              videoElement.srcObject = newStream;
              videoElement.style.display = 'block';
              errorElement.style.display = 'none';
-             messageElement.textContent = 'Arahkan wajah ke kamera';
+             messageElement.textContent = 'Arahkan barcode ke kamera';
              console.log(`${elementId} started with stream:`, newStream);
+
+             Quagga.init({
+               inputStream: {
+                 name: 'Live',
+                 type: 'LiveStream',
+                 target: videoElement,
+                 constraints: {
+                   facingMode: cameraMode
+                 }
+               },
+               decoder: {
+                 readers: ['code_128_reader', 'ean_reader', 'qr_reader']
+               },
+               locate: true
+             }, function(err) {
+               if (err) {
+                 console.error(`Quagga init error for ${elementId}:`, err);
+                 videoElement.style.display = 'none';
+                 errorElement.style.display = 'block';
+                 errorElement.textContent = `Gagal memulai scanner: ${err.message}`;
+                 return;
+               }
+               console.log(`Quagga initialized for ${elementId}`);
+               Quagga.start();
+             });
+
              return newStream;
            } catch (error) {
              console.error(`Error accessing ${elementId}:`, error);
@@ -411,162 +437,76 @@
            }
          }
 
-         async function stopWebcam(streamToStop) {
+         async function stopScanner(streamToStop) {
            if (streamToStop) {
              streamToStop.getTracks().forEach(track => track.stop());
-             console.log('Webcam stream stopped');
+             Quagga.stop();
+             console.log('Scanner stream stopped');
            }
          }
 
-         async function loadFaceApiModels() {
-           try {
-             console.log('Loading face-api.js models...');
-             await Promise.all([
-               faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights'),
-               faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights'),
-               faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights')
-             ]);
-             console.log('Face-api.js models loaded:', faceapi.nets);
-           } catch (error) {
-             console.error('Error loading face-api.js models:', error);
-             document.getElementById('webcam-error').style.display = 'block';
-             document.getElementById('webcam-error').textContent = 'Gagal memuat model pengenalan wajah';
-           }
-         }
+         async function processBarcode(code, isPopup = false) {
+           const guideElement = document.getElementById(isPopup ? 'popup-scan-guide' : 'scan-guide');
+           const messageElement = document.getElementById('scan-message');
+           guideElement.classList.add('detected');
+           messageElement.textContent = 'Barcode terdeteksi, sedang memproses...';
+           console.log('Detected barcode:', code);
 
-         async function initializeFaceMatcher() {
-           console.time('initializeFaceMatcher');
-           const labeledDescriptors = [];
-           const maxPhotos = 10; // Optimasi untuk Android
-           let loadedCount = 0;
-           for (const student of studentDatabase) {
-             if (loadedCount >= maxPhotos) break;
+           const student = siswaData.find(s => s.nisn === code);
+           if (student) {
+             messageElement.textContent = `Barcode dikenali: ${student.nama}`;
+             document.getElementById('student-photo').src = student.foto || 'https://img.icons8.com/color/96/user.png';
+             document.getElementById('student-nisn').textContent = `NISN: ${student.nisn}`;
+             document.getElementById('student-name').textContent = `Nama Lengkap: ${student.nama}`;
+             document.getElementById('student-class').textContent = `Kelas: ${student.kelas}`;
+             console.log('Card 5 updated:', student);
+
              try {
-               console.log(`Loading image for NISN ${student.nisn}: ${student.photo}`);
-               const img = await faceapi.fetchImage(student.photo);
-               const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })).withFaceLandmarks().withFaceDescriptor();
-               if (detection) {
-                 labeledDescriptors.push(
-                   new faceapi.LabeledFaceDescriptors(student.nisn, [detection.descriptor])
-                 );
-                 loadedCount++;
-                 console.log(`Descriptor created for NISN ${student.nisn}`);
+               const absenResponse = await fetch(`${BASE_URL}?action=simpan&nisn=${student.nisn}&t=${new Date().getTime()}`);
+               const absenResult = await absenResponse.json();
+               console.log('Absensi result:', absenResult);
+               if (absenResult.success) {
+                 console.log('Absensi tersimpan:', absenResult);
+                 await fetchAbsensiData();
                } else {
-                 console.warn(`No face detected in image for NISN: ${student.nisn}`);
+                 console.error('Gagal menyimpan absensi:', absenResult.message);
+                 messageElement.textContent = `Gagal mencatat absensi: ${absenResult.message}`;
                }
              } catch (error) {
-               console.error(`Error loading image for NISN ${student.nisn}:`, error);
+               console.error('Error saving absensi:', error);
+               messageElement.textContent = `Error mencatat absensi: ${error.message}`;
              }
-           }
-           faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
-           console.log(`Face matcher initialized with ${loadedCount} photos`);
-           console.timeEnd('initializeFaceMatcher');
-         }
-
-         async function captureFace(videoElementId) {
-           if (!faceMatcher) {
-             console.warn('Face matcher not initialized');
-             return;
-           }
-           const videoElement = document.getElementById(videoElementId);
-           const guideElement = document.getElementById(videoElementId === 'webcam' ? 'face-guide' : 'popup-face-guide');
-           const messageElement = document.getElementById('face-message');
-           console.time('captureFace');
-           try {
-             const detections = await faceapi
-               .detectSingleFace(videoElement, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
-               .withFaceLandmarks()
-               .withFaceDescriptor();
-             console.log('Detections:', detections);
-             if (detections) {
-               guideElement.classList.remove('recognized');
-               guideElement.classList.add('detected');
-               messageElement.textContent = 'Wajah terdeteksi, sedang memproses...';
-               const bestMatch = faceMatcher.findBestMatch(detections.descriptor);
-               console.log('Best match:', bestMatch);
-               if (bestMatch.label !== 'unknown') {
-                 const student = studentDatabase.find(s => s.nisn === bestMatch.label);
-                 console.log('Found student:', student);
-                 if (student) {
-                   guideElement.classList.remove('detected');
-                   guideElement.classList.add('recognized');
-                   messageElement.textContent = `Wajah dikenali: ${student.name}`;
-                   document.getElementById('student-photo').src = student.photo;
-                   document.getElementById('student-nisn').textContent = `NISN: ${student.nisn}`;
-                   document.getElementById('student-name').textContent = `Nama Lengkap: ${student.name}`;
-                   document.getElementById('student-class').textContent = `Kelas: ${student.class}`;
-                   console.log('Card 5 updated:', student);
-
-                   const absenResponse = await fetch(`${BASE_URL}?action=simpan&nisn=${student.nisn}&t=${new Date().getTime()}`);
-                   const absenResult = await absenResponse.json();
-                   console.log('Absensi result:', absenResult);
-                   if (absenResult.success) {
-                     console.log('Absensi tersimpan:', absenResult);
-                     await fetchAbsensiData();
-                   } else {
-                     console.error('Gagal menyimpan absensi:', absenResult.message);
-                   }
-                 } else {
-                   console.warn('Student not found in studentDatabase:', bestMatch.label);
-                   guideElement.classList.remove('detected');
-                   messageElement.textContent = 'Wajah tidak dikenali';
-                   document.getElementById('student-photo').src = 'https://img.icons8.com/color/96/user.png';
-                   document.getElementById('student-nisn').textContent = 'NISN: Tidak dikenali';
-                   document.getElementById('student-name').textContent = 'Nama Lengkap: Tidak dikenali';
-                   document.getElementById('student-class').textContent = 'Kelas: Tidak dikenali';
-                 }
-               } else {
-                 console.log('No match found');
-                 guideElement.classList.remove('detected');
-                 messageElement.textContent = 'Wajah tidak dikenali';
-                 document.getElementById('student-photo').src = 'https://img.icons8.com/color/96/user.png';
-                 document.getElementById('student-nisn').textContent = 'NISN: Tidak dikenali';
-                 document.getElementById('student-name').textContent = 'Nama Lengkap: Tidak dikenali';
-                 document.getElementById('student-class').textContent = 'Kelas: Tidak dikenali';
-               }
-             } else {
-               console.log('No face detected in webcam');
-               guideElement.classList.remove('detected', 'recognized');
-               messageElement.textContent = 'Arahkan wajah ke kamera';
-             }
-           } catch (error) {
-             console.error('Error in face recognition:', error);
-             guideElement.classList.remove('detected', 'recognized');
-             messageElement.textContent = 'Error dalam pengenalan wajah';
-             document.getElementById(videoElementId === 'webcam' ? 'webcam-error' : 'popup-error').style.display = 'block';
-             document.getElementById(videoElementId === 'webcam' ? 'webcam-error' : 'popup-error').textContent = `Error pengenalan wajah: ${error.message}`;
-           } finally {
-             console.timeEnd('captureFace');
+           } else {
+             console.log('No student found for barcode:', code);
+             guideElement.classList.remove('detected');
+             messageElement.textContent = 'Barcode tidak dikenali';
+             document.getElementById('student-photo').src = 'https://img.icons8.com/color/96/user.png';
+             document.getElementById('student-nisn').textContent = 'NISN: Tidak dikenali';
+             document.getElementById('student-name').textContent = 'Nama Lengkap: Tidak dikenali';
+             document.getElementById('student-class').textContent = 'Kelas: Tidak dikenali';
            }
          }
 
          function openPopup() {
            document.getElementById('popup').style.display = 'flex';
            document.getElementById('popup-overlay').style.display = 'block';
-           stopWebcam(stream);
-           startWebcam('popup-video').then(newStream => {
+           stopScanner(stream);
+           const cameraMode = document.getElementById('popup-camera-select').value;
+           startScanner('popup-scanner', cameraMode).then(newStream => {
              popupStream = newStream;
-             captureInterval = setInterval(() => {
-               console.log('Running captureFace in popup at', new Date().toLocaleTimeString());
-               captureFace('popup-video');
-             }, 7000);
            });
          }
 
          function closePopup() {
            document.getElementById('popup').style.display = 'none';
            document.getElementById('popup-overlay').style.display = 'none';
-           clearInterval(captureInterval);
-           stopWebcam(popupStream);
+           stopScanner(popupStream);
            popupStream = null;
-           document.getElementById('face-message').textContent = 'Arahkan wajah ke kamera';
-           document.getElementById('popup-face-guide').classList.remove('detected', 'recognized');
-           startWebcam('webcam').then(newStream => {
+           document.getElementById('scan-message').textContent = 'Arahkan barcode ke kamera';
+           document.getElementById('popup-scan-guide').classList.remove('detected');
+           const cameraMode = document.getElementById('camera-select').value;
+           startScanner('scanner', cameraMode).then(newStream => {
              stream = newStream;
-             captureInterval = setInterval(() => {
-               console.log('Running captureFace in main webcam at', new Date().toLocaleTimeString());
-               captureFace('webcam');
-             }, 7000);
            });
          }
 
@@ -645,6 +585,29 @@
          document.getElementById('open-popup').addEventListener('click', openPopup);
          document.getElementById('close-popup').addEventListener('click', closePopup);
 
+         document.getElementById('camera-select').addEventListener('change', () => {
+           stopScanner(stream);
+           const cameraMode = document.getElementById('camera-select').value;
+           startScanner('scanner', cameraMode).then(newStream => {
+             stream = newStream;
+           });
+         });
+
+         document.getElementById('popup-camera-select').addEventListener('change', () => {
+           stopScanner(popupStream);
+           const cameraMode = document.getElementById('popup-camera-select').value;
+           startScanner('popup-scanner', cameraMode).then(newStream => {
+             popupStream = newStream;
+           });
+         });
+
+         Quagga.onDetected(function(result) {
+           const code = result.codeResult.code;
+           console.log('Barcode detected:', code);
+           const isPopup = document.getElementById('popup').style.display === 'flex';
+           processBarcode(code, isPopup);
+         });
+
          function formatDate(date) {
            const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
            const dayName = days[date.getDay()];
@@ -691,18 +654,7 @@
 
              siswaData = data.siswa;
              filteredData = [...siswaData];
-             studentDatabase = siswaData.map(s => ({
-               nisn: s.nisn,
-               name: s.nama,
-               class: s.kelas,
-               photo: s.foto
-             }));
              console.log('siswaData:', siswaData);
-             console.log('studentDatabase:', studentDatabase);
-
-             console.time('initializeFaceMatcher');
-             await initializeFaceMatcher();
-             console.timeEnd('initializeFaceMatcher');
 
              const absensi = data.absensi;
              document.getElementById('tingkatX-title').textContent = `Ting X | ${absensi["X"].total} Org`;
@@ -758,14 +710,9 @@
            document.getElementById('rekapan-title').textContent = `Rekapan Absensi hari ${formatDate(new Date())}`;
            console.time('initialLoad');
            try {
-             await loadFaceApiModels();
              await fetchAbsensiData();
-             await startWebcam('webcam').then(newStream => {
+             await startScanner('scanner', document.getElementById('camera-select').value).then(newStream => {
                stream = newStream;
-               captureInterval = setInterval(() => {
-                 console.log('Running captureFace in main webcam at', new Date().toLocaleTimeString());
-                 captureFace('webcam');
-               }, 7000);
              });
            } catch (error) {
              console.error('Error in window.onload:', error);
