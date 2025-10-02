@@ -2,740 +2,181 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Scanner Absensi Barcode</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
-  <style>
-    *, *:before, *:after {
-      box-sizing: border-box;
-    }
-    body {
-      overscroll-behavior: none;
-      font-size: 16px;
-    }
-    .card-5-fixed {
-      min-height: 230px;
-      max-height: 230px;
-    }
-    .card-6-fixed {
-      min-height: 108px;
-      max-height: 108px;
-    }
-    .left-column {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      width: 100%;
-    }
-    .card-5-8-row {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .card-5-container, .card-8-container {
-      width: 100%;
-    }
-    .table-card {
-      width: 100%;
-      min-height: 350px;
-      align-self: start;
-    }
-    .table-cell-limited {
-      max-width: 100px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .scanner-container {
-      position: relative;
-      width: 100%;
-      height: 200px;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    #scanner {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    #scan-guide {
-      position: absolute;
-      top: 20%;
-      left: 20%;
-      width: 60%;
-      height: 60%;
-      border: 2px dashed #4b5563;
-      border-radius: 8px;
-      pointer-events: none;
-      transition: border-color 0.3s;
-    }
-    #scan-guide.detected {
-      border-color: #10b981;
-    }
-    #scanner-error {
-      display: none;
-      color: red;
-      font-size: 14px;
-      text-align: center;
-    }
-    #scan-message {
-      text-align: center;
-      font-size: 14px;
-      color: #4b5563;
-      margin-top: 5px;
-    }
-    #popup {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 90%;
-      height: 80%;
-      max-height: 600px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-      z-index: 1000;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-    }
-    #popup-scanner {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 8px;
-    }
-    #popup .scanner-container {
-      height: 70%;
-    }
-    #popup-scan-guide {
-      position: absolute;
-      top: 20%;
-      left: 20%;
-      width: 60%;
-      height: 60%;
-      border: 2px dashed #4b5563;
-      border-radius: 8px;
-      pointer-events: none;
-      transition: border-color 0.3s;
-    }
-    #popup-scan-guide.detected {
-      border-color: #10b981;
-    }
-    #popup-error {
-      display: none;
-      color: red;
-      font-size: 14px;
-      text-align: center;
-    }
-    #popup-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 999;
-    }
-    /* Responsivitas untuk Android */
-    @media (max-width: 768px) {
-      .grid-cols-12 {
-        grid-template-columns: 1fr;
-      }
-      .col-span-2 {
-        display: none;
-      }
-      .col-span-10 {
-        width: 100%;
-        padding: 8px;
-      }
-      .grid-cols-5 {
-        grid-template-columns: 1fr;
-        gap: 8px;
-      }
-      .col-span-2, .col-span-1 {
-        width: 100%;
-      }
-      #digital-clock {
-        font-size: 1.5rem;
-      }
-      #rekapan-title {
-        font-size: 1rem;
-        text-align: center;
-      }
-      .table-card table {
-        font-size: 0.9rem;
-      }
-      .table-cell-limited {
-        max-width: 80px;
-      }
-      button {
-        font-size: 0.9rem;
-        padding: 8px;
-      }
-      .card-5-container p {
-        font-size: 1rem;
-      }
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplikasi Absensi QR Code</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
-<body class="bg-gray-100 font-sans">
-  <div class="grid grid-cols-12 h-screen">
-    <div class="col-span-2 bg-blue-800 text-white p-6 flex flex-col">
-      <div class="flex items-center mb-8">
-        <img src="https://via.placeholder.com/40" alt="Logo Sekolah" class="w-10 h-10 mr-3">
-        <h1 class="text-lg font-semibold">Nama Sekolah</h1>
-      </div>
-      <nav class="flex-1">
-        <ul class="space-y-4">
-          <li><a href="#" class="flex items-center space-x-2 text-white hover:text-blue-300"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
-          <li><a href="#" class="flex items-center space-x-2 text-white hover:text-blue-300"><i class="fas fa-sign-in-alt"></i><span>Login</span></a></li>
-        </ul>
-      </nav>
-    </div>
+<body class="bg-gray-100 p-4">
 
-    <div class="col-span-10 p-6 flex flex-col h-full">
-      <div class="flex justify-between items-center mb-3">
-        <div class="relative w-full">
-          <input type="text" placeholder="Cari..." class="w-full p-2 pl-10 border rounded-lg">
-          <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-        </div>
-        <div class="flex items-center space-x-4">
-          <button onclick="fetchAbsensiData()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700" id="refresh-btn">Refresh</button>
-          <i class="fas fa-user-circle text-3xl text-gray-600"></i>
-        </div>
-      </div>
+  <h1 class="text-2xl font-bold mb-4">Absensi QR Code</h1>
+  <div id="date-time" class="mb-4 text-gray-600"></div>
 
-      <div class="flex justify-between items-center mb-3">
-        <button onclick="additionalAction()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Aksi Tambahan</button>
-        <h2 class="text-xl font-semibold text-right" id="rekapan-title">Rekapan Absensi hari Selasa, 30/09/2025</h2>
-      </div>
+  <!-- Scanner -->
+  <div id="scanner" style="width: 400px; margin:auto;" class="mb-6"></div>
 
-      <div class="grid grid-cols-5 gap-3 mb-3">
-        <div class="col-span-2 bg-white p-5 rounded-lg shadow-md h-25 flex items-center overflow-hidden">
-          <div class="flex items-center space-x-4">
-            <i class="fas fa-user text-4xl text-blue-600"></i>
-            <div>
-              <h2 class="text-lg font-semibold line-clamp-1">Selamat Datang</h2>
-              <p class="text-base text-gray-600 line-clamp-1">Selamat datang di scanner absensi barcode.</p>
-            </div>
-          </div>
-        </div>
+  <!-- Search -->
+  <input type="text" id="search" placeholder="Cari siswa..." class="border p-2 mb-4 w-full">
 
-        <div class="col-span-1 bg-white p-5 rounded-lg shadow-md h-22 flex flex-col justify-center overflow-hidden">
-          <h2 class="text-lg font-semibold line-clamp-1" id="tingkatX-title">Ting X | ... Org</h2>
-          <div class="grid grid-cols-2 gap-1 text-sm text-gray-600" id="tingkatX-data">
-            <p class="line-clamp-1">✅ Hadir: 0</p>
-            <p class="line-clamp-1">📝 Izin: 0</p>
-            <p class="line-clamp-1">😎 Bolos: 0</p>
-            <p class="line-clamp-1">🤒 Sakit: 0</p>
-            <p class="line-clamp-1">❌ Alfa: 0</p>
-          </div>
-        </div>
-
-        <div class="col-span-1 bg-white p-5 rounded-lg shadow-md h-22 flex flex-col justify-center overflow-hidden">
-          <h2 class="text-lg font-semibold line-clamp-1" id="tingkatXI-title">Ting XI | ... Org</h2>
-          <div class="grid grid-cols-2 gap-1 text-sm text-gray-600" id="tingkatXI-data">
-            <p class="line-clamp-1">✅ Hadir: 0</p>
-            <p class="line-clamp-1">📝 Izin: 0</p>
-            <p class="line-clamp-1">❌ Alfa: 0</p>
-            <p class="line-clamp-1">😎 Bolos: 0</p>
-            <p class="line-clamp-1">🤒 Sakit: 0</p>
-          </div>
-        </div>
-
-        <div class="col-span-1 bg-white p-5 rounded-lg shadow-md h-22 flex flex-col justify-center overflow-hidden">
-          <h2 class="text-lg font-semibold line-clamp-1" id="tingkatXII-title">Ting XII | ... Org</h2>
-          <div class="grid grid-cols-2 gap-1 text-sm text-gray-600" id="tingkatXII-data">
-            <p class="line-clamp-1">✅ Hadir: 0</p>
-            <p class="line-clamp-1">📝 Izin: 0</p>
-            <p class="line-clamp-1">❌ Alfa: 0</p>
-            <p class="line-clamp-1">😎 Bolos: 0</p>
-            <p class="line-clamp-1">🤒 Sakit: 0</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex flex-row gap-3 flex-1">
-        <div class="left-column">
-          <div class="card-5-8-row">
-            <div class="card-8-container">
-              <div class="bg-white p-5 rounded-lg shadow-md card-5-fixed flex flex-col justify-center items-center overflow-hidden">
-                <h2 class="text-lg font-semibold line-clamp-1 mb-2">Scanner Barcode</h2>
-                <div class="scanner-container">
-                  <video id="scanner" autoplay playsinline></video>
-                  <div id="scan-guide"></div>
-                </div>
-                <p id="scan-message">Arahkan barcode ke kamera</p>
-                <p id="scanner-error">Gagal memuat kamera</p>
-                <select id="camera-select" class="border rounded-lg p-2 mt-2">
-                  <option value="user">Kamera Depan</option>
-                  <option value="environment">Kamera Belakang</option>
-                </select>
-                <button id="open-popup" class="bg-blue-600 text-white px-4 py-2 mt-2 rounded-lg hover:bg-blue-700">Buka Scanner</button>
-              </div>
-            </div>
-            <div class="card-5-container">
-              <div class="bg-white p-1 rounded-lg shadow-md card-5-fixed flex flex-col items-center space-y-2 overflow-hidden">
-                <img id="student-photo" src="https://img.icons8.com/color/96/user.png" alt="Foto Siswa" class="w-[100px] h-[120px] rounded-md mx-auto object-cover">
-                <hr class="my-2 border-gray-300 w-full">
-                <div class="space-y-1 w-full pl-4">
-                  <p class="text-sm font-semibold line-clamp-1" id="student-nisn">NISN: -</p>
-                  <p class="text-sm font-semibold line-clamp-1" id="student-name">Nama Lengkap: -</p>
-                  <p class="text-sm font-semibold line-clamp-1" id="student-class">Kelas: -</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="bg-white p-2 rounded-lg shadow-md card-6-fixed flex flex-row items-center gap-4 overflow-hidden">
-            <div class="flex-1 text-center">
-              <h2 class="text-lg font-semibold line-clamp-1">Jam Sekarang</h2>
-              <p class="text-3xl font-bold text-gray-800" id="digital-clock">07:30:00</p>
-            </div>
-            <div class="flex-1 flex flex-col justify-center">
-              <h2 class="text-lg font-semibold text-center mb-2">MASUK | PULANG</h2>
-              <div class="grid grid-cols-2 gap-4 text-center" id="masuk-pulang-data">
-                <div>
-                  <p class="text-sm text-gray-600">Masuk</p>
-                  <p class="text-xl font-bold text-blue-600" id="jam-masuk">-</p>
-                </div>
-                <div>
-                  <p class="text-sm text-gray-600">Pulang</p>
-                  <p class="text-xl font-bold text-green-600" id="jam-pulang">-</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white p-5 rounded-lg shadow-md table-card flex flex-col overflow-hidden">
-          <h2 class="text-lg font-semibold mb-3">Daftar Siswa</h2>
-          <div class="flex justify-between items-center mb-3">
-            <div class="relative w-1/2">
-              <input type="text" id="search-table" placeholder="Cari NISN, Nama, atau Kelas..." class="w-full p-2 pl-10 border rounded-lg">
-              <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-            </div>
-            <div class="flex items-center space-x-2">
-              <label for="rows-per-page" class="text-sm">Tampilkan:</label>
-              <select id="rows-per-page" class="border rounded-lg p-1">
-                <option value="3" selected>3</option>
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="20">20</option>
-                <option value="30">30</option>
-              </select>
-            </div>
-          </div>
-          <div class="flex-1 overflow-y-auto">
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm text-left text-gray-600">
-                <thead class="bg-gray-100 sticky top-0">
-                  <tr>
-                    <th class="p-2">No</th>
-                    <th class="p-2 table-cell-limited">NISN</th>
-                    <th class="p-2 table-cell-limited">Nama</th>
-                    <th class="p-2 table-cell-limited">Kelas</th>
-                    <th class="p-2">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody id="table-body">
-                  <tr><td colspan="5" class="p-2 text-center">Memuat data...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div class="flex justify-between items-center mt-3">
-            <button id="prev-page" class="bg-gray-300 text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-400 disabled:opacity-50" disabled>Previous</button>
-            <span id="page-info" class="text-sm">Halaman 1 dari 1</span>
-            <button id="next-page" class="bg-gray-300 text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-400 disabled:opacity-50" disabled>Next</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Popup untuk Scanner -->
-    <div id="popup-overlay"></div>
-    <div id="popup">
-      <h2 class="text-xl font-semibold">Scanner Barcode</h2>
-      <div class="scanner-container">
-        <video id="popup-scanner" autoplay playsinline></video>
-        <div id="popup-scan-guide"></div>
-      </div>
-      <p id="scan-message">Arahkan barcode ke kamera</p>
-      <p id="popup-error">Gagal memuat kamera</p>
-      <select id="popup-camera-select" class="border rounded-lg p-2">
-        <option value="user">Kamera Depan</option>
-        <option value="environment">Kamera Belakang</option>
-      </select>
-      <button id="close-popup" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Tutup</button>
-    </div>
+  <!-- Rekap -->
+  <div class="grid grid-cols-3 gap-4 mb-4">
+    <div class="bg-green-100 p-2 rounded">Hadir: <span id="rekap-hadir">0</span></div>
+    <div class="bg-yellow-100 p-2 rounded">Izin: <span id="rekap-izin">0</span></div>
+    <div class="bg-red-100 p-2 rounded">Alfa: <span id="rekap-alfa">0</span></div>
   </div>
 
-  <script>
-    let stream = null;
-    let popupStream = null;
-    let siswaData = [];
-    let filteredData = [];
-    let currentPage = 1;
-    let rowsPerPage = 3;
-    const BASE_URL = 'https://script.google.com/macros/s/AKfycbzVF64Tj2YKrxABGX9lCdjbSG4ar4xueGXiT45hspbZjmZz2dSadE13RFNshE8-kES6nA/exec';
+  <!-- Tabel -->
+  <table class="w-full border">
+    <thead>
+      <tr class="bg-gray-200">
+        <th class="p-2 border">NISN</th>
+        <th class="p-2 border">Nama</th>
+        <th class="p-2 border">Kelas</th>
+        <th class="p-2 border">Status</th>
+        <th class="p-2 border">Aksi</th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
 
-    async function startScanner(elementId, cameraMode = 'environment') {
-      const videoElement = document.getElementById(elementId);
-      const errorElement = document.getElementById(elementId === 'scanner' ? 'scanner-error' : 'popup-error');
-      const messageElement = document.getElementById('scan-message');
-      try {
-        console.log(`Attempting to start ${elementId} with cameraMode: ${cameraMode}`);
-        const constraints = {
-          video: { 
-            width: elementId === 'popup-scanner' ? 1280 : 640, 
-            height: elementId === 'popup-scanner' ? 720 : 480,
-            facingMode: cameraMode
-          }
-        };
-        const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-        videoElement.srcObject = newStream;
-        videoElement.style.display = 'block';
-        errorElement.style.display = 'none';
-        messageElement.textContent = 'Arahkan barcode ke kamera';
-        console.log(`${elementId} started with stream:`, newStream);
+<script>
+// ================== Konfigurasi ==================
+const BASE_URL = "https://script.google.com/macros/s/AKfycbzXXXXXXX/exec";
 
-        Quagga.init({
-          inputStream: {
-            name: 'Live',
-            type: 'LiveStream',
-            target: videoElement,
-            constraints: constraints.video
-          },
-          decoder: {
-            readers: ['code_128_reader', 'ean_reader', 'qr_reader']
-          },
-          locate: true
-        }, function(err) {
-          if (err) {
-            console.error(`Quagga init error for ${elementId}:`, err);
-            videoElement.style.display = 'none';
-            errorElement.style.display = 'block';
-            errorElement.textContent = `Gagal memulai scanner: ${err.message}`;
-            return;
-          }
-          console.log(`Quagga initialized for ${elementId}`);
-          Quagga.start();
-        });
+// ================== Data & State ==================
+let siswaData = [];
+let absensiList = [];
+let currentPage = 1;
+let rowsPerPage = 10;
 
-        Quagga.onProcessed(function(result) {
-          console.log('Quagga onProcessed:', result);
-        });
+// ================== Waktu ==================
+function updateDateTime() {
+  const now = new Date();
+  document.getElementById("date-time").textContent = now.toLocaleString("id-ID");
+}
+setInterval(updateDateTime, 1000);
+updateDateTime();
 
-        return newStream;
-      } catch (error) {
-        console.error(`Error accessing ${elementId} with ${cameraMode}:`, error);
-        if (cameraMode === 'environment') {
-          console.log('Falling back to user camera');
-          return startScanner(elementId, 'user'); // Fallback ke kamera depan
-        }
-        videoElement.style.display = 'none';
-        errorElement.style.display = 'block';
-        errorElement.textContent = `Gagal memuat kamera: ${error.message}`;
-        return null;
-      }
-    }
+// ================== Scanner QR ==================
+function onScanSuccess(decodedText, decodedResult) {
+  html5QrcodeScanner.clear().then(_ => {
+      handleScanResult(decodedText);
+  }).catch(err => console.error("Gagal stop scanner:", err));
+}
+function onScanFailure(error) {
+  console.warn(`Scan gagal: ${error}`);
+}
+let html5QrcodeScanner = new Html5QrcodeScanner(
+  "scanner", 
+  { fps: 10, qrbox: 250 }
+);
+html5QrcodeScanner.render(onScanSuccess, onScanFailure);
 
-    async function stopScanner(streamToStop) {
-      if (streamToStop) {
-        streamToStop.getTracks().forEach(track => track.stop());
-        Quagga.stop();
-        console.log('Scanner stream stopped');
-      }
-    }
-
-    async function processBarcode(code, isPopup = false) {
-      console.log('Processing barcode:', code, 'isPopup:', isPopup);
-      console.log('siswaData:', siswaData);
-      const guideElement = document.getElementById(isPopup ? 'popup-scan-guide' : 'scan-guide');
-      const messageElement = document.getElementById('scan-message');
-      guideElement.classList.add('detected');
-      messageElement.textContent = 'Barcode terdeteksi, sedang memproses...';
-      const student = siswaData.find(s => {
-        console.log(`Comparing: ${s.nisn} === ${code}`);
-        return s.nisn === code;
-      });
-      console.log('Found student:', student);
-      if (student) {
-        messageElement.textContent = `Barcode dikenali: ${student.nama}`;
-        document.getElementById('student-photo').src = student.foto || 'https://img.icons8.com/color/96/user.png';
-        document.getElementById('student-nisn').textContent = `NISN: ${student.nisn}`;
-        document.getElementById('student-name').textContent = `Nama Lengkap: ${student.nama}`;
-        document.getElementById('student-class').textContent = `Kelas: ${student.kelas}`;
-        console.log('Card 5 updated:', student);
-
-        try {
-          const absenResponse = await fetch(`${BASE_URL}?action=simpan&nisn=${student.nisn}&t=${new Date().getTime()}`);
-          const absenResult = await absenResponse.json();
-          console.log('Absensi result:', absenResult);
-          if (absenResult.success) {
-            console.log('Absensi tersimpan:', absenResult);
-            await fetchAbsensiData();
+// ================== Proses Hasil Scan ==================
+function handleScanResult(nisn) {
+  Swal.fire({
+    title: "Konfirmasi Absensi",
+    text: `Apakah siswa dengan NISN ${nisn} ingin dicatat hadir?`,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "Ya, Hadir",
+    cancelButtonText: "Batal"
+  }).then(result => {
+    if (result.isConfirmed) {
+      fetch(`${BASE_URL}?action=absen&nisn=${nisn}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            Swal.fire("Berhasil!", data.message, "success");
+            fetchAbsensiData();
           } else {
-            console.error('Gagal menyimpan absensi:', absenResult.message);
-            messageElement.textContent = `Gagal mencatat absensi: ${absenResult.message}`;
+            Swal.fire("Gagal!", data.message, "error");
           }
-        } catch (error) {
-          console.error('Error saving absensi:', error);
-          messageElement.textContent = `Error mencatat absensi: ${error.message}`;
-        }
-      } else {
-        console.log('No student found for barcode:', code);
-        guideElement.classList.remove('detected');
-        messageElement.textContent = 'Barcode tidak dikenali';
-        document.getElementById('student-photo').src = 'https://img.icons8.com/color/96/user.png';
-        document.getElementById('student-nisn').textContent = 'NISN: Tidak dikenali';
-        document.getElementById('student-name').textContent = 'Nama Lengkap: Tidak dikenali';
-        document.getElementById('student-class').textContent = 'Kelas: Tidak dikenali';
-      }
-    }
-
-    function openPopup() {
-      document.getElementById('popup').style.display = 'flex';
-      document.getElementById('popup-overlay').style.display = 'block';
-      stopScanner(stream);
-      const cameraMode = document.getElementById('popup-camera-select').value;
-      startScanner('popup-scanner', cameraMode).then(newStream => {
-        popupStream = newStream;
-      });
-    }
-
-    function closePopup() {
-      document.getElementById('popup').style.display = 'none';
-      document.getElementById('popup-overlay').style.display = 'none';
-      stopScanner(popupStream);
-      popupStream = null;
-      document.getElementById('scan-message').textContent = 'Arahkan barcode ke kamera';
-      document.getElementById('popup-scan-guide').classList.remove('detected');
-      const cameraMode = document.getElementById('camera-select').value;
-      startScanner('scanner', cameraMode).then(newStream => {
-        stream = newStream;
-      });
-    }
-
-    function renderTable(data, page, rows) {
-      const start = (page - 1) * rows;
-      const end = start + rows;
-      const paginatedData = data.slice(start, end);
-      const tableBody = document.getElementById('table-body');
-      tableBody.innerHTML = '';
-
-      if (paginatedData.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="5" class="p-2 text-center">Tidak ada data ditemukan</td></tr>';
-      } else {
-        paginatedData.forEach((item, index) => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td class="p-2">${start + index + 1}</td>
-            <td class="p-2 table-cell-limited">${item.nisn}</td>
-            <td class="p-2 table-cell-limited">${item.nama}</td>
-            <td class="p-2 table-cell-limited">${item.kelas}</td>
-            <td class="p-2">
-              <button onclick="viewDetail('${item.nisn}')" class="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 text-xs">Lihat Detail</button>
-            </td>
-          `;
-          tableBody.appendChild(row);
+        })
+        .catch(err => {
+          Swal.fire("Error", "Tidak bisa terhubung ke server", "error");
+          console.error(err);
         });
-      }
-
-      const totalPages = Math.ceil(data.length / rows);
-      document.getElementById('page-info').textContent = `Halaman ${page} dari ${totalPages || 1}`;
-      document.getElementById('prev-page').disabled = page === 1;
-      document.getElementById('next-page').disabled = page === totalPages || totalPages === 0;
+    } else {
+      // restart scanner kalau dibatalkan
+      html5QrcodeScanner.render(onScanSuccess, onScanFailure);
     }
+  });
+}
 
-    function searchTable() {
-      const searchValue = document.getElementById('search-table').value.toLowerCase();
-      filteredData = siswaData.filter(item =>
-        item.nisn.toLowerCase().includes(searchValue) ||
-        item.nama.toLowerCase().includes(searchValue) ||
-        item.kelas.toLowerCase().includes(searchValue)
-      );
-      currentPage = 1;
-      renderTable(filteredData, currentPage, rowsPerPage);
-    }
+// ================== Ambil Data Absensi ==================
+function fetchAbsensiData() {
+  fetch(`${BASE_URL}?action=getAbsensi`)
+    .then(res => res.json())
+    .then(data => {
+      siswaData = data.siswa || [];
+      absensiList = data.absensi || [];
+      renderTable();
+      updateRekap();
+    })
+    .catch(err => console.error("Gagal ambil data:", err));
+}
 
-    function updateRowsPerPage() {
-      rowsPerPage = parseInt(document.getElementById('rows-per-page').value);
-      currentPage = 1;
-      renderTable(filteredData, currentPage, rowsPerPage);
-    }
+// ================== Render Tabel ==================
+function renderTable() {
+  const tbody = document.getElementById("table-body");
+  const searchValue = document.getElementById("search").value.toLowerCase();
+  let filtered = siswaData.filter(s =>
+    s.nama.toLowerCase().includes(searchValue) ||
+    s.nisn.includes(searchValue) ||
+    s.kelas.toLowerCase().includes(searchValue)
+  );
 
-    function viewDetail(nisn) {
-      alert(`Melihat detail untuk NISN: ${nisn}`);
-    }
+  const start = (currentPage - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+  const paginated = filtered.slice(start, end);
 
-    function additionalAction() {
-      alert('Aksi tambahan dilakukan!');
-    }
+  tbody.innerHTML = "";
+  paginated.forEach(s => {
+    tbody.innerHTML += `
+      <tr class="border-b">
+        <td class="p-2 border">${s.nisn}</td>
+        <td class="p-2 border">${s.nama}</td>
+        <td class="p-2 border">${s.kelas}</td>
+        <td class="p-2 border">${s.status || "-"}</td>
+        <td class="p-2 border">
+          <button onclick="viewDetail('${s.nisn}')" class="bg-blue-500 text-white px-2 py-1 rounded">Detail</button>
+        </td>
+      </tr>
+    `;
+  });
+}
 
-    document.getElementById('search-table').addEventListener('input', searchTable);
-    document.getElementById('rows-per-page').addEventListener('change', updateRowsPerPage);
-    document.getElementById('prev-page').addEventListener('click', () => {
-      if (currentPage > 1) {
-        currentPage--;
-        renderTable(filteredData, currentPage, rowsPerPage);
-      }
-    });
-    document.getElementById('next-page').addEventListener('click', () => {
-      const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-      if (currentPage < totalPages) {
-        currentPage++;
-        renderTable(filteredData, currentPage, rowsPerPage);
-      }
-    });
+// ================== Update Rekap ==================
+function updateRekap() {
+  let hadir = absensiList.filter(a => a.status === "Hadir").length;
+  let izin = absensiList.filter(a => a.status === "Izin").length;
+  let alfa = absensiList.filter(a => a.status === "Alfa").length;
+  document.getElementById("rekap-hadir").textContent = hadir;
+  document.getElementById("rekap-izin").textContent = izin;
+  document.getElementById("rekap-alfa").textContent = alfa;
+}
 
-    document.getElementById('open-popup').addEventListener('click', openPopup);
-    document.getElementById('close-popup').addEventListener('click', closePopup);
+// ================== Detail Siswa ==================
+function viewDetail(nisn) {
+  const siswa = siswaData.find(s => s.nisn === nisn);
+  if (!siswa) return;
+  Swal.fire({
+    title: "Detail Siswa",
+    html: `
+      <p><b>NISN:</b> ${siswa.nisn}</p>
+      <p><b>Nama:</b> ${siswa.nama}</p>
+      <p><b>Kelas:</b> ${siswa.kelas}</p>
+      <p><b>Status:</b> ${siswa.status || "-"}</p>
+    `
+  });
+}
 
-    document.getElementById('camera-select').addEventListener('change', () => {
-      stopScanner(stream);
-      const cameraMode = document.getElementById('camera-select').value;
-      startScanner('scanner', cameraMode).then(newStream => {
-        stream = newStream;
-      });
-    });
+// ================== Inisialisasi ==================
+fetchAbsensiData();
+document.getElementById("search").addEventListener("input", renderTable);
+</script>
 
-    document.getElementById('popup-camera-select').addEventListener('change', () => {
-      stopScanner(popupStream);
-      const cameraMode = document.getElementById('popup-camera-select').value;
-      startScanner('popup-scanner', cameraMode).then(newStream => {
-        popupStream = newStream;
-      });
-    });
-
-    Quagga.onDetected(function(result) {
-      const code = result.codeResult.code;
-      console.log('Barcode detected:', code);
-      const isPopup = document.getElementById('popup').style.display === 'flex';
-      processBarcode(code, isPopup);
-    });
-
-    function formatDate(date) {
-      const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-      const dayName = days[date.getDay()];
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-      return `${dayName}, ${day}/${month}/${year}`;
-    }
-
-    function updateClock() {
-      try {
-        const now = new Date();
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        const clockElement = document.getElementById('digital-clock');
-        if (clockElement) {
-          clockElement.textContent = `${hours}:${minutes}:${seconds}`;
-        } else {
-          console.error('Element #digital-clock not found');
-        }
-      } catch (error) {
-        console.error('Error in updateClock:', error);
-      }
-    }
-
-    async function fetchAbsensiData() {
-      const refreshBtn = document.getElementById('refresh-btn');
-      refreshBtn.textContent = 'Loading...';
-      refreshBtn.disabled = true;
-      console.time('fetchAbsensiData');
-
-      try {
-        const response = await fetch(`${BASE_URL}?action=getsiswawithfoto&t=${new Date().getTime()}`);
-        if (!response.ok) {
-          throw new Error(`HTTP error: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log("Respons getsiswawithfoto:", JSON.stringify(data, null, 2));
-
-        if (!data.success) {
-          throw new Error(data.message || 'Respons server tidak valid');
-        }
-
-        siswaData = data.siswa;
-        filteredData = [...siswaData];
-        console.log('siswaData:', siswaData);
-
-        const absensi = data.absensi;
-        document.getElementById('tingkatX-title').textContent = `Ting X | ${absensi["X"].total} Org`;
-        document.getElementById('tingkatX-data').innerHTML = `
-          <p class="line-clamp-1">✅ Hadir: ${absensi["X"].hadir}</p>
-          <p class="line-clamp-1">📝 Izin: ${absensi["X"].izin}</p>
-          <p class="line-clamp-1">😎 Bolos: ${absensi["X"].bolos}</p>
-          <p class="line-clamp-1">🤒 Sakit: ${absensi["X"].sakit}</p>
-          <p class="line-clamp-1">❌ Alfa: ${absensi["X"].alfa}</p>
-        `;
-
-        document.getElementById('tingkatXI-title').textContent = `Ting XI | ${absensi["XI"].total} Org`;
-        document.getElementById('tingkatXI-data').innerHTML = `
-          <p class="line-clamp-1">✅ Hadir: ${absensi["XI"].hadir}</p>
-          <p class="line-clamp-1">📝 Izin: ${absensi["XI"].izin}</p>
-          <p class="line-clamp-1">❌ Alfa: ${absensi["XI"].alfa}</p>
-          <p class="line-clamp-1">😎 Bolos: ${absensi["XI"].bolos}</p>
-          <p class="line-clamp-1">🤒 Sakit: ${absensi["XI"].sakit}</p>
-        `;
-
-        document.getElementById('tingkatXII-title').textContent = `Ting XII | ${absensi["XII"].total} Org`;
-        document.getElementById('tingkatXII-data').innerHTML = `
-          <p class="line-clamp-1">✅ Hadir: ${absensi["XII"].hadir}</p>
-          <p class="line-clamp-1">📝 Izin: ${absensi["XII"].izin}</p>
-          <p class="line-clamp-1">❌ Alfa: ${absensi["XII"].alfa}</p>
-          <p class="line-clamp-1">😎 Bolos: ${absensi["XII"].bolos}</p>
-          <p class="line-clamp-1">🤒 Sakit: ${absensi["XII"].sakit}</p>
-        `;
-
-        const jadwalHariIni = data.jadwalHariIni;
-        document.getElementById('jam-masuk').textContent = jadwalHariIni.masuk && jadwalHariIni.masuk !== "-" ? jadwalHariIni.masuk : "Tidak ada jadwal";
-        document.getElementById('jam-pulang').textContent = jadwalHariIni.pulang && jadwalHariIni.pulang !== "-" ? jadwalHariIni.pulang : "Tidak ada jadwal";
-
-        if (siswaData.length === 0) {
-          document.getElementById('table-body').innerHTML = `<tr><td colspan="5" class="p-2 text-center text-red-600">Data siswa tidak ditemukan</td></tr>`;
-        }
-        renderTable(filteredData, currentPage, rowsPerPage);
-
-      } catch (error) {
-        console.error('Error di fetchAbsensiData:', error);
-        alert(`Gagal memuat data: ${error.message}`);
-        document.getElementById('table-body').innerHTML = `<tr><td colspan="5" class="p-2 text-center text-red-600">Gagal memuat data: ${error.message}</td></tr>`;
-      } finally {
-        refreshBtn.textContent = 'Refresh';
-        refreshBtn.disabled = false;
-        console.timeEnd('fetchAbsensiData');
-      }
-    }
-
-    window.onload = async function() {
-      updateClock();
-      setInterval(updateClock, 1000);
-      document.getElementById('rekapan-title').textContent = `Rekapan Absensi hari ${formatDate(new Date())}`;
-      console.time('initialLoad');
-      try {
-        await fetchAbsensiData();
-        await startScanner('scanner', document.getElementById('camera-select').value).then(newStream => {
-          stream = newStream;
-        });
-      } catch (error) {
-        console.error('Error in window.onload:', error);
-        alert(`Gagal memulai aplikasi: ${error.message}`);
-      } finally {
-        console.timeEnd('initialLoad');
-      }
-    };
-  </script>
 </body>
 </html>
